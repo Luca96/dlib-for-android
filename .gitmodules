@@ -1,0 +1,4 @@
+[submodule "dlib"]
+	path = dlib
+	url = https://github.com/davisking/dlib
+	branch = master
