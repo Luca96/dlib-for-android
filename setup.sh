@@ -6,13 +6,12 @@
 # -----------------------------------------------------------------------------
 
 # Android-cmake path: REPLACE WITH YOUR CMAKE PATH!
-CMAKE_PATH='E:/Luca/Android/sdk/cmake/3.10.2.4988404/'
-ANDROID_CMAKE="$CMAKE_PATH/bin/cmake"
+AndroidCmake='your-path-to/Android/sdk/cmake/3.10.2.4988404/bin/cmake'
 
 # Android-ndk path: REPLACE WITH YOUR NDK PATH!
-NDK="${ANDROID_NDK:-E:/Luca/Android/sdk/ndk-bundle}"
+NDK="${ANDROID_NDK:-your-path-to/Android/sdk/ndk-bundle}"
 
-TOOLCHAIN="$CMAKE_PATH/bin/android.toolchain.cmake"
+TOOLCHAIN="$NDK/build/cmake/android.toolchain.cmake"
 
 # Supported Android ABI: TAKE ONLY WHAT YOU NEED!
 ABI=('armeabi-v7a' 'arm64-v8a' 'x86' 'x86_64')
@@ -21,18 +20,23 @@ ABI=('armeabi-v7a' 'arm64-v8a' 'x86' 'x86_64')
 MIN_SDK=16
 
 # Android project path: REPLACE WITH YOUR PROJECT PATH!
-PROJECT_PATH='E:/Luca/Progetti/Android/FaceLandmarks'
+PROJECT_PATH='your-path-to/android/project'
+
+# Directory for storing native libraries
+NATIVE_DIR="$PROJECT_PATH/app/src/main/cppLibs"
 
 # -----------------------------------------------------------------------------
 # -- Dlib setup
 # ----------------------------------------------------------------------------- 
 
-# Dlib library path: REPLACE WITH YOUR DLIB PATH!
-DLIB_PATH='E:/Luca/Librerie/Dlib/dlib-19.16'
+# Dlib library path:
+DLIB_PATH='dlib'
 
 function compile_dlib {
 	cd $DLIB_PATH
 	mkdir 'build'
+
+	echo '=> Compiling Dlib...'
 
 	for abi in "${ABI[@]}"
 	do
@@ -53,6 +57,7 @@ function compile_dlib {
 					  -DANDROID_TOOLCHAIN=clang \
 					  -DANDROID_STL=c++_shared \
 					  -DANDROID_CPP_FEATURES=rtti exceptions \
+					  -DCMAKE_PREFIX_PATH=../../ \
 					  ../../
  		
  		echo "=> Generating the 'dlib/libdlib.so' for ABI: '$abi'..."
@@ -63,54 +68,62 @@ function compile_dlib {
 	done
 }
 
-echo '=> Compiling Dlib...'
+function dlib_setup {
+	echo '=> Making directories for Dlib ...'
+	mkdir "$NATIVE_DIR/dlib"
+	echo "=> '$NATIVE_DIR/dlib' created."
+	mkdir "$NATIVE_DIR/dlib/lib"
+	echo "=> '$NATIVE_DIR/dlib/lib' created."
+	mkdir "$NATIVE_DIR/dlib/include"
+	echo "=> '$NATIVE_DIR/dlib/include' created."
+	mkdir "$NATIVE_DIR/dlib/include/dlib"
+    echo "=> '$NATIVE_DIR/dlib/include/dlib' created."
+
+	echo "=> Copying Dlib headers..."
+	cp -v -r "$DLIB_PATH/dlib" "$NATIVE_DIR/dlib/include"
+
+	echo "=> Copying 'libdlib.so' for each ABI..."
+	for abi in "${ABI[@]}"
+	do
+		mkdir "$NATIVE_DIR/dlib/lib/$abi"
+		cp -v "$DLIB_PATH/build/$abi/dlib/libdlib.so" "$NATIVE_DIR/dlib/lib/$abi"
+		echo " > Copied libdlib.so for $abi"
+	done
+}
+
+# COMMENT TO DISABLE COMPILATION
 compile_dlib
+
+# -----------------------------------------------------------------------------
+# -- OpenCV
+# -----------------------------------------------------------------------------
+
+# OpenCV library path: REPLACE WITH YOUR OPENCV PATH!
+OPENCV_PATH='path-to-your/opencv-4.0.1-android-sdk/sdk/native'
+
+function opencv_setup {
+	mkdir "$NATIVE_DIR/opencv"
+
+	echo "=> Copying 'libopencv_java4.so' for each ABI..."
+	for abi in "${ABI[@]}"
+	do
+		mkdir "$NATIVE_DIR/opencv/$abi"
+		cp -v "$OPENCV_PATH/libs/$abi/libopencv_java4.so" "$NATIVE_DIR/opencv/$abi"
+		echos " > Copied libopencv_java4.so for $abi"
+	done
+}
 
 # -----------------------------------------------------------------------------
 # -- Project setup
 # -----------------------------------------------------------------------------
 
-cd "$PROJECT_PATH/app/src/main"
-mkdir 'cppLibs'
+mkdir $NATIVE_DIR
 
-# -----------------------------------------------------------------------------
-# -- Dlib stuff
-# -----------------------------------------------------------------------------
-echo '=> Making directories for Dlib ...'
-mkdir 'cppLibs/dlib'
-echo "=> 'cppLibs/dlib' created."
-mkdir 'cppLibs/dlib/lib'
-echo "=> 'cppLibs/dlib/lib' created."
-mkdir 'cppLibs/dlib/include'
-echo "=> 'cppLibs/dlib/include' created."
+# COMMENT TO NOT COPY DLIB '.so' FILES
+dlib_setup
 
-echo "=> Copying Dlib headers..."
-cp -v "$DLIB_PATH/dlib/" "$PROJECT_PATH/cppLibs/dlib/include"
-
-echo "=> Copying 'libdlib.so' for each ABI..."
-for abi in "${ABI[@]}"
-do
-	mkdir "cppLibs/dlib/lib/$abi"
-	cp -v "$DLIB_PATH/build/$abi/dlib/libdlib.so" "cppLibs/dlib/lib/$abi"
-done
-
-# -----------------------------------------------------------------------------
-# -- OpenCV stuff
-# -----------------------------------------------------------------------------
-
-# OpenCV library path: REPLACE WITH YOUR OPENCV PATH!
-OPENCV_PATH='E:/Luca/Librerie/OpenCV/opencv-4.0.1-android-sdk/sdk/native'
-
-mkdir 'cppLibs/opencv'
-
-echo "=> Copying 'libopencv_java4.so' for each ABI..."
-for abi in "${ABI[@]}"
-do
-	mkdir "cppLibs/opencv/$abi"
-	cp -v "$OPENCV_PATH/libs/$abi/libopencv_java4.so" "cppLibs/opencv/$abi"
-done
-
-# -----------------------------------------------------------------------------
+# COMMENT TO NOT COPY OPENCV '.so' FILES
+opencv_setup
 
 echo "=> Project configuration completed."
 

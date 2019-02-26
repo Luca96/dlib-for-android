@@ -5,17 +5,16 @@
 # -----------------------------------------------------------------------------
 
 # Android-cmake path: REPLACE WITH YOUR CMAKE PATH!
-$AndroidCmake = 'E:\Luca\Android\sdk\cmake\3.10.2.4988404\bin\cmake.exe'
+$AndroidCmake = 'your-path-to\Android\sdk\cmake\3.10.2.4988404\bin\cmake.exe'
 
 # Android-ndk path: REPLACE WITH YOUR NDK PATH!
 if (Get-Variable 'ANDROID_NDK' -Scope Global -ErrorAction 'Ignore') {
     $NDK = $ANDROID_NDK
 } else {
-    $NDK = 'E:\Luca\Android\sdk\ndk-bundle'
+    $NDK = 'your-path-to\Android\sdk\ndk-bundle'
 }
 
-# Android toolchain path: REPLACE WITH YOUR ANDROID-TOOLCHAIN PATH!!
-$TOOLCHAIN = 'E:\Luca\Android\sdk\ndk-bundle\build\cmake\android.toolchain.cmake'
+$TOOLCHAIN = "$NDK\build\cmake\android.toolchain.cmake"
 
 # Supported Android ABI: TAKE ONLY WHAT YOU NEED!
 $ABIs = 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
@@ -24,13 +23,14 @@ $ABIs = 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
 $MIN_SDK = 16
 
 # Android project path: REPLACE WITH YOUR PROJECT PATH!
-$PROJECT_PATH = 'E:\Luca\Progetti\Android\FaceLandmarks'
+$PROJECT_PATH = 'your-path-to\android\project'
+
+# Directory for storing native libraries
+$NATIVE_DIR = "$PROJECT_PATH\app\src\main\cppLibs"
 
 # -----------------------------------------------------------------------------
 # -- Utils
 # -----------------------------------------------------------------------------
-$INITIAL_LOCATION = Get-Location
-
 function Make-Dir {
     if (-Not (Test-Path $args[0])) {
         New-Item -ItemType directory -Path $args[0] > $null
@@ -53,15 +53,18 @@ function Copy-Directory ($from, $to, $tab) {
 }
 
 # -----------------------------------------------------------------------------
-# -- Dlib setup
+# -- Dlib
 # ----------------------------------------------------------------------------- 
 
-# Dlib library path: REPLACE WITH YOUR DLIB PATH!
-$DLIB_PATH = 'E:\Luca\Librerie\Dlib\dlib-19.16'
+# Dlib library path:
+$DLIB_PATH = 'dlib'
 
 function Compile-Dlib {
     Set-Location $DLIB_PATH
     Make-Dir 'build'
+
+    Write-Host '=> Compiling Dlib...'
+    sleep 0.5
 
     ForEach ($abi in $ABIs) {
         Write-Host
@@ -101,56 +104,61 @@ function Compile-Dlib {
     }    
 }
 
-Write-Host '=> Compiling Dlib...'
-sleep 0.5
-# Compile-Dlib
+function Dlib-Setup {
+    Write-Host '=> Making directories for Dlib...'
+    Make-Dir "$NATIVE_DIR\dlib"
+    Write-Host "=> '$NATIVE_DIR\dlib' created."
+    Make-Dir "$NATIVE_DIR\dlib\lib"
+    Write-Host "=> '$NATIVE_DIR\dlib\lib' created."
+    Make-Dir "$NATIVE_DIR\dlib\include"
+    Write-Host "=> '$NATIVE_DIR\dlib\include' created."
+    Make-Dir "$NATIVE_DIR\dlib\include\dlib"
+    Write-Host "=> '$NATIVE_DIR\dlib\include\dlib' created."
+
+    Write-Host "=> Copying Dlib headers..."
+    Copy-Directory "$DLIB_PATH\dlib" "$NATIVE_DIR\dlib\include\dlib" ''
+
+    Write-Host "=> Copying 'libdlib.so' for each ABI..."
+    ForEach ($abi in $ABIs) {
+        Make-Dir "$NATIVE_DIR\dlib\lib\$abi"
+        Copy-Item -Path "$DLIB_PATH\build\$abi\dlib\libdlib.so" -Destination "$NATIVE_DIR\dlib\lib\$abi"
+        Write-Host " > Copied libdlib.so for $abi"
+    }
+}
+
+# COMMENT TO DISABLE COMPILATION
+Compile-Dlib
+
+# -----------------------------------------------------------------------------
+# -- OpenCV
+# -----------------------------------------------------------------------------
+
+# OpenCV library path: REPLACE WITH YOUR OPENCV PATH!
+$OPENCV_PATH='path-to-your\opencv-4.0.1-android-sdk\sdk\native'
+
+function Opencv-Setup {
+    Make-Dir "$NATIVE_DIR\opencv"
+
+    Write-Host "=> Copying 'libopencv_java4.so' for each ABI..."
+    ForEach ($abi in $ABIs) {
+        Make-Dir "$NATIVE_DIR\opencv\$abi"
+        Copy-Item -Path "$OPENCV_PATH\libs\$abi\libopencv_java4.so" -Destination "$NATIVE_DIR\opencv\$abi"
+        Write-Host " > Copied libopencv_java4.so for $abi"
+    }
+}
 
 # -----------------------------------------------------------------------------
 # -- Project setup
 # -----------------------------------------------------------------------------
 
-Set-Location "$PROJECT_PATH\app\src\main"
-Make-Dir 'cppLibs'
+Make-Dir $NATIVE_DIR
 
-# -----------------------------------------------------------------------------
-# -- Dlib stuff
-# -----------------------------------------------------------------------------
-Write-Host '=> Making directories for Dlib ...'
-Make-Dir 'cppLibs\dlib'
-Write-Host "=> 'cppLibs\dlib' created."
-Make-Dir 'cppLibs\dlib\lib'
-Write-Host "=> 'cppLibs\dlib\lib' created."
-Make-Dir 'cppLibs\dlib\include'
-Write-Host "=> 'cppLibs\dlib\include' created."
+# COMMENT TO NOT COPY DLIB '.so' FILES
+Dlib-Setup
 
-Write-Host "=> Copying Dlib headers..."
-# Copy-Item -Path "$DLIB_PATH\dlib" -Destination "$PROJECT_PATH\cppLibs\dlib\include" -Recurse
-Copy-Directory "$DLIB_PATH\dlib" "cppLibs\dlib\include" ''
+# COMMENT TO NOT COPY OPENCV '.so' FILES
+Opencv-Setup
 
-Write-Host "=> Copying 'libdlib.so' for each ABI..."
-ForEach ($abi in $ABIs) {
-    Make-Dir "cppLibs\dlib\lib\$abi"
-    Copy-Item -Path "$DLIB_PATH\build\$abi\dlib\libdlib.so" -Destination "cppLibs\dlib\lib\$abi"
-}
-
-# -----------------------------------------------------------------------------
-# -- OpenCV stuff
-# -----------------------------------------------------------------------------
-
-# OpenCV library path: REPLACE WITH YOUR OPENCV PATH!
-$OPENCV_PATH='E:\Luca\Librerie\OpenCV\opencv-4.0.1-android-sdk\sdk\native'
-
-Make-Dir 'cppLibs\opencv'
-
-Write-Host "=> Copying 'libopencv_java4.so' for each ABI..."
-ForEach ($abi in $ABIs) {
-    Make-Dir "cppLibs\opencv\$abi"
-    Copy-Item -Path "$OPENCV_PATH\libs\$abi\libopencv_java4.so" -Destination "cppLibs\opencv\$abi"
-}
-
-# -----------------------------------------------------------------------------
-
-Set-Location $INITIAL_LOCATION
 Write-Host "=> Project configuration completed."
 
 # -----------------------------------------------------------------------------
