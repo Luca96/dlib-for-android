@@ -25,7 +25,7 @@ From _AndroidStudio_ at `tool > SDK Manager > SDK Tools` install:
 6. Update your `build.gradle` (app) file in order to support __CMake__ [example](https://gist.github.com/Luca96/32a66ddb8beb78712606cb375ebd4e9d).
 7. Build and Enjoy! 
 
-A complete tutorial is available [here](medium/url/to/article).
+A complete tutorial is available [here](https://medium.com/@luca_anzalone/setting-up-dlib-and-opencv-for-android-3efdbfcf9e7f).
 
 ## Examples	
 On my github you can find [here](https://github.com/Luca96/android-face-landmarks), a complete Android application that uses Dlib and OpenCV 4.
@@ -39,4 +39,4 @@ _For Windows users_: If the __PowerShell__ complains about the script you can tr
 ```
 
 ## Warning
-Bash script __NOT TESTED!!__.
+Bash script __NOT TESTED!!__
