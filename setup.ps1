@@ -1,7 +1,7 @@
 # Luca Anzalone
 
 # -----------------------------------------------------------------------------
-# -- DLIB FOR ANDROID
+# -- DLIB FOR ANDROID: setup script
 # -----------------------------------------------------------------------------
 
 # Android-cmake path: REPLACE WITH YOUR CMAKE PATH!
@@ -18,6 +18,15 @@ $TOOLCHAIN = "$NDK\build\cmake\android.toolchain.cmake"
 
 # Supported Android ABI: TAKE ONLY WHAT YOU NEED!
 $ABIs = 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+
+# path to stripper tool: REPLACE WITH YOURS, ACCORDING TO OS!!
+$STRIPPER_PATH = "$NDK\toolchains\llvm\prebuilt\windows-x86_64\bin"
+$STRIPPERS = @{
+    'armeabi-v7a' = "$STRIPPER_PATH\arm-linux-androideabi-strip.exe";
+    'arm64-v8a'   = "$STRIPPER_PATH\aarch64-linux-android-strip.exe";
+    'x86'         = "$STRIPPER_PATH\x86_64-linux-android-strip.exe" ;
+    'x86_64'      = "$STRIPPER_PATH\x86_64-linux-android-strip.exe" ;    
+} 
 
 # Minimum supported sdk: SHOULD BE GREATER THAN 16
 $MIN_SDK = 16
@@ -91,11 +100,20 @@ function Compile-Dlib {
                 "..\..\"
         )
 
+        $stripArguments = @(
+                "--strip-unneeded",
+                "dlib/libdlib.so"
+        )
+
         & $AndroidCmake $cmakeArguments
         sleep 0.5
 
         Write-Host "=> Generating the 'dlib/libdlib.so' for ABI: '$abi'..."
         & $AndroidCmake --build .
+        sleep 0.5
+
+        Write-Host "=> Stripping libdlib.so for ABI: '$abi'to reduce space..."
+        & $STRIPPERS[$abi] $stripArguments
         sleep 0.5
 
         Write-Host '=> done.'
