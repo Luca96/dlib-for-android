@@ -16,6 +16,15 @@ TOOLCHAIN="$NDK/build/cmake/android.toolchain.cmake"
 # Supported Android ABI: TAKE ONLY WHAT YOU NEED!
 ABI=('armeabi-v7a' 'arm64-v8a' 'x86' 'x86_64')
 
+# path to strip tool: REPLACE WITH YOURS, ACCORDING TO OS!!
+STRIP_PATH="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+STRIP_TOOLS=(
+    ['armeabi-v7a'] = "$STRIP_PATH/arm-linux-androideabi-strip.exe"
+    ['arm64-v8a']   = "$STRIP_PATH/aarch64-linux-android-strip.exe"
+    ['x86']         = "$STRIP_PATH/x86_64-linux-android-strip.exe" 
+    ['x86_64']      = "$STRIP_PATH/x86_64-linux-android-strip.exe"
+) 
+
 # Minimum supported sdk: SHOULD BE GREATER THAN 16
 MIN_SDK=16
 
@@ -46,7 +55,7 @@ function compile_dlib {
 		mkdir "build/$abi"
 		cd "build/$abi"
 
-		ANDROID_CMAKE -DBUILD_SHARED_LIBS=1 \
+		$AndroidCmake -DBUILD_SHARED_LIBS=1 \
 					  -DANDROID_NDK=$NDK \
 					  -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN \
 					  -DCMAKE_BUILD_TYPE=Release \
@@ -61,7 +70,10 @@ function compile_dlib {
 					  ../../
  		
  		echo "=> Generating the 'dlib/libdlib.so' for ABI: '$abi'..."
-		ANDROID_CMAKE --build .
+		$AndroidCmake --build .
+
+		echo "=> Stripping libdlib.so for ABI: '$abi'to reduce lib size..."
+		$STRIP_TOOLS[$abi] --strip-unneeded dlib/libdlib.so
 
 		echo '=> done.'
 		cd ../../
@@ -80,7 +92,7 @@ function dlib_setup {
     echo "=> '$NATIVE_DIR/dlib/include/dlib' created."
 
 	echo "=> Copying Dlib headers..."
-	cp -v -r "$DLIB_PATH/dlib" "$NATIVE_DIR/dlib/include"
+	cp -v -r "$DLIB_PATH/dlib" "$NATIVE_DIR/dlib/include/dlib"
 
 	echo "=> Copying 'libdlib.so' for each ABI..."
 	for abi in "${ABI[@]}"
