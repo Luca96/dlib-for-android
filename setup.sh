@@ -18,12 +18,16 @@ ABI=('armeabi-v7a' 'arm64-v8a' 'x86' 'x86_64')
 
 # path to strip tool: REPLACE WITH YOURS, ACCORDING TO OS!!
 STRIP_PATH="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+
+# Declare the array
+declare -A STRIP_TOOLS
+
 STRIP_TOOLS=(
-    ['armeabi-v7a'] = "$STRIP_PATH/arm-linux-androideabi-strip.exe"
-    ['arm64-v8a']   = "$STRIP_PATH/aarch64-linux-android-strip.exe"
-    ['x86']         = "$STRIP_PATH/x86_64-linux-android-strip.exe" 
-    ['x86_64']      = "$STRIP_PATH/x86_64-linux-android-strip.exe"
-) 
+    ['armeabi-v7a']=$STRIP_PATH/arm-linux-androideabi-strip
+    ['arm64-v8a']=$STRIP_PATH/aarch64-linux-android-strip
+    ['x86']=$STRIP_PATH/x86_64-linux-android-strip
+    ['x86_64']=$STRIP_PATH/x86_64-linux-android-strip
+)
 
 # Minimum supported sdk: SHOULD BE GREATER THAN 16
 MIN_SDK=16
@@ -38,7 +42,7 @@ NATIVE_DIR="$PROJECT_PATH/app/src/main/cppLibs"
 # -- Dlib setup
 # ----------------------------------------------------------------------------- 
 
-# Dlib library path:
+# Dlib library path: REPLACE WITH YOUR DLIB PATH!
 DLIB_PATH='dlib'
 
 function compile_dlib {
@@ -73,7 +77,7 @@ function compile_dlib {
 		$AndroidCmake --build .
 
 		echo "=> Stripping libdlib.so for ABI: '$abi'to reduce lib size..."
-		$STRIP_TOOLS[$abi] --strip-unneeded dlib/libdlib.so
+		${STRIP_TOOLS[$abi]} --strip-unneeded dlib/libdlib.so
 
 		echo '=> done.'
 		cd ../../
