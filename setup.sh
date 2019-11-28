@@ -63,7 +63,7 @@ function compile_dlib {
 					  -DANDROID_NDK=$NDK \
 					  -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN \
 					  -DCMAKE_BUILD_TYPE=Release \
-					  -DCMAKE_CXX_FLAGS=-std=c++11 -frtti -fexceptions \
+					  -DCMAKE_CXX_FLAGS="-std=c++11 -frtti -fexceptions" \
 					  -DCMAKE_C_FLAGS=-O3 \
 					  -DANDROID_ABI=$abi \
 					  -DANDROID_PLATFORM="android-$MIN_SDK" \
